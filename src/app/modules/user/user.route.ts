@@ -53,4 +53,17 @@ userRoutes.get(
   auth(UserRole.ADMIN, UserRole.DOCTOR, UserRole.PATIENT, UserRole.SUPER_ADMIN),
   userController.getMyProfile
 );
+
+userRoutes.patch(
+  "/update/my-profile",
+  auth(UserRole.ADMIN, UserRole.DOCTOR, UserRole.PATIENT, UserRole.SUPER_ADMIN),
+  upload.single("file"),
+  (req: Request, res: Response, next: NextFunction) => {
+    req.body = JSON.parse(req.body.data);
+    next();
+  },
+  // validateRequest(userValidation.updateStatus),
+  userController.updateMyProfile
+);
+
 export default userRoutes;

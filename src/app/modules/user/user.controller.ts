@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import { userservices } from "./user.service";
 import { catchAsync } from "../../../shared/catchAsync";
 import { pick } from "../../../shared/pick";
+import { IJwtPayload } from "../auth/auth.interface";
 
 const createAdmin = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -69,13 +70,35 @@ const changeProfileStatus = catchAsync(
 );
 
 const getMyProfile = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (
+    req: Request & { user?: IJwtPayload },
+    res: Response,
+    next: NextFunction
+  ) => {
     // console.log(req.user);
 
     const result = await userservices.getMyProfileFromDB(req.user);
     res.status(200).send({
       success: true,
       message: "get my profile successfully",
+      data: result,
+    });
+  }
+);
+const updateMyProfile = catchAsync(
+  async (
+    req: Request & { user?: IJwtPayload },
+    res: Response,
+    next: NextFunction
+  ) => {
+    const result = await userservices.updateMyProfileIntoDB(
+      req.file,
+      req.user,
+      req.body
+    );
+    res.status(200).send({
+      success: true,
+      message: "Update my profile successfully",
       data: result,
     });
   }
@@ -88,4 +111,5 @@ export const userController = {
   getAllUser,
   changeProfileStatus,
   getMyProfile,
+  updateMyProfile,
 };

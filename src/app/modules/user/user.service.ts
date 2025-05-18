@@ -1,4 +1,4 @@
-import { Prisma, PrismaClient, UserRole } from "@prisma/client";
+import { Prisma, PrismaClient, UserRole, UserStatus } from "@prisma/client";
 import { uploadToCLoudinary } from "../../../shared/fileUploader";
 import { calculatePagination } from "../../../shared/calculatePagination";
 import { equal } from "assert";
@@ -151,13 +151,13 @@ const getAllUserFromDB = async (params: any, options: any) => {
 };
 
 const changeProfileStatusIntoDB = async (id: string, status: string) => {
-  console.log(status);
+  console.log("changeProfileStatusIntoDB", status);
 
   const result = await prisma.user.update({ where: { id }, data: status });
   return result;
 };
 
-const getMyProfileFromDB = async (user) => {
+const getMyProfileFromDB = async (user: any) => {
   const userInfo = await prisma.user.findUniqueOrThrow({
     where: {
       email: user.email,
@@ -190,6 +190,50 @@ const getMyProfileFromDB = async (user) => {
 
   return { ...userInfo, ...profileInfo };
 };
+
+const updateMyProfileIntoDB = async (file: any, user: any, payload: any) => {
+  const userInfo = await prisma.user.findUniqueOrThrow({
+    where: {
+      email: user.email,
+      status: UserStatus.ACTIVE,
+    },
+  });
+
+  if (file) {
+    const iamgeUrl = await uploadToCLoudinary(file);
+    payload.profilePhoto = iamgeUrl;
+  }
+
+  let profileInfo;
+  if (
+    userInfo?.role === UserRole.ADMIN ||
+    userInfo?.role === UserRole.SUPER_ADMIN
+  ) {
+    profileInfo = await prisma.admin.update({
+      where: {
+        email: user.email,
+      },
+      data: payload,
+    });
+  } else if (userInfo?.role === UserRole.DOCTOR) {
+    profileInfo = await prisma.doctor.update({
+      where: {
+        email: user.email,
+      },
+      data: payload,
+    });
+  } else if (userInfo?.role === UserRole.PATIENT) {
+    profileInfo = await prisma.patient.update({
+      where: {
+        email: user.email,
+      },
+      data: payload,
+    });
+  }
+  // console.log(profileInfo);
+
+  return { ...profileInfo };
+};
 export const userservices = {
   createadmin,
   createDoctorIntoDB,
@@ -197,4 +241,5 @@ export const userservices = {
   getAllUserFromDB,
   changeProfileStatusIntoDB,
   getMyProfileFromDB,
+  updateMyProfileIntoDB,
 };
